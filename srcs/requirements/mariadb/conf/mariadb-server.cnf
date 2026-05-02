@@ -1,0 +1,23 @@
+[server]
+
+[mysqld]
+# Especificamos el usuario bajo el cual correrá MariaDB
+user = mysql
+
+# standard port of MariaDB
+port = 3306
+
+# Especificamos dónde se guardarán los datos. 
+# Importante: Este directorio se mapeará a un volumen de Docker.
+datadir = /var/lib/mysql
+
+# Allow connections from any IP (0.0.0.0).
+# update default port 127.0.0.1 to any IP address, if not update this wordpress cant connect to MariaDB.
+bind-address = 0.0.0.0
+
+# setup where create the sockets.
+socket = /run/mysqld/mysqld.sock
+
+# TODO: Evitamos que resuelva nombres de host (hace las conexiones más rápidas y evita problemas DNS)
+#skip-networking = false
+#skip-name-resolve
