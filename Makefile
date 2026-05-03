@@ -59,6 +59,7 @@ mariadb:
 
 # UP ONLY MariaDB
 mariadb-up:
+	@mkdir -p /home/${USER}/data/mariadb
 	$(COMPOSE) up -d --build mariadb
 # check logs MariaDB
 mariadb-logs:
