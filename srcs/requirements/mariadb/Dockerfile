@@ -12,10 +12,10 @@ RUN mkdir -p /run/mysqld && \
     chown -R mysql:mysql /run/mysqld
 
 # Copiamos nuestro archivo de configuración
-COPY conf/mariadb-server.cnf /etc/my.cnf.d/mariadb-server.cnf
+COPY requirements/mariadb/conf/mariadb-server.cnf /etc/my.cnf.d/mariadb-server.cnf
 
 # Copiamos nuestro script de inicio
-COPY tools/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY requirements/mariadb/tools/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Le damos permisos de ejecución al script
 RUN chmod +x /usr/local/bin/entrypoint.sh
@@ -24,4 +24,4 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 EXPOSE 3306
 
 # Definimos el script como el punto de entrada
-ENTRYPOINT ["sh", "/tmp/entrypoint.sh"]
+ENTRYPOINT ["sh", "/usr/local/bin/entrypoint.sh"]
