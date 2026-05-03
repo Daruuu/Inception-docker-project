@@ -8,7 +8,7 @@ RESET		= \033[0m
 NAME		= inception
 
 SRCS_DIR	= ./srcs
-COMPOSE		= docker compose -f $(SRCS_DIR)/../docker-compose.yml
+COMPOSE		= docker compose -f $(SRCS_DIR)/docker-compose.yml
 
 # Targets
 all: build up
@@ -49,13 +49,20 @@ status:
 	docker volume ls | grep inception || echo "No volumes found"
 
 nginx:
-	$(COMPOSE) exec nginx bash
+	$(COMPOSE) exec nginx sh
 
 wordpress:
-	$(COMPOSE) exec wordpress bash
+	$(COMPOSE) exec wordpress sh
 
 mariadb:
-	$(COMPOSE) exec mariadb bash
+	$(COMPOSE) exec mariadb sh
+
+# UP ONLY MariaDB
+mariadb-up:
+	$(COMPOSE) up -d --build mariadb
+# check logs MariaDB
+mariadb-logs:
+	$(COMPOSE) logs -f mariadb
 
 # Bonus targets (útil cuando añadas redis, ftp, etc.)
 bonus: re
