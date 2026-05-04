@@ -25,6 +25,7 @@ setup:
 		echo "WP_USER=colleague" >> srcs/.env; \
 		echo "WP_USER_PASSWORD=userpass" >> srcs/.env; \
 		echo "WP_USER_EMAIL=user@example.com" >> srcs/.env; \
+		echo "NGINX_PORT=443" >> srcs/.env; \
 	fi
 	@if [ ! -f srcs/secrets/db_password.txt ]; then \
 		echo "Creando secreto db_password..."; \
@@ -54,8 +55,8 @@ clean: down
 fclean: clean 
 	@printf "Borrando volúmenes y datos de ${NAME}...\n"
 	@sudo rm -rf $(DATA_PATH)
-	@rm -f srcs/.env
 	@rm -rf srcs/secrets
+	@#rm -f srcs/.env
 
 re: fclean all
 

@@ -1,44 +1,59 @@
-version: '3.8'
-
-# ===========================
-# SERVICES
-# ===========================
 services:
   mariadb:
-    container_name: mariadb
     build:
       context: .
       dockerfile: requirements/mariadb/Dockerfile
-    restart: always
+    container_name: mariadb
     env_file:
       - .env
-    secrets:
-      - db_password
-      - db_root_password
     networks:
       - inception_network
     volumes:
       - mariadb_data:/var/lib/mysql
+    secrets:
+      - db_password
+      - db_root_password
+    restart: always
 
-# ----------------------------------------
-# Global Configuration of Secrets
-# ----------------------------------------
-secrets:
-  db_password:
-    file: ../secrets/db_password.txt
-  db_root_password:
-    file: ../secrets/db_root_password.txt
+  wordpress:
+    build:
+      context: .
+      dockerfile: requirements/wordpress/Dockerfile
+    container_name: wordpress
+    depends_on:
+      - mariadb
+    env_file:
+      - .env
+    networks:
+      - inception_network
+    volumes:
+      - wordpress_data:/var/www/html/wordpress
+    secrets:
+      - db_password
+    restart: always
 
-# ----------------------------------------
-# Global Configuration of Networks 
-# ----------------------------------------
+  nginx:
+    build:
+      context: .
+      dockerfile: requirements/nginx/Dockerfile
+    container_name: nginx
+    depends_on:
+      - wordpress
+    ports:
+      - "${NGINX_PORT}:443" # host-port : port-container
+    #      - "443:443"
+    networks:
+      - inception_network
+    volumes:
+      - wordpress_data:/var/www/html/wordpress
+    secrets:
+      - db_password
+    restart: always
+
 networks:
   inception_network:
     driver: bridge
 
-# ----------------------------------------
-# Global Configuration of Volumes 
-# ----------------------------------------
 volumes:
   mariadb_data:
     driver: local
@@ -46,4 +61,15 @@ volumes:
       type: none
       o: bind
       device: /home/${USER}/data/mariadb
-  # here add wordpress
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/wordpress
+
+secrets:
+  db_password:
+    file: secrets/db_password.txt
+  db_root_password:
+    file: secrets/db_root_password.txt
