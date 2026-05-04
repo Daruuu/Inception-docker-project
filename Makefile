@@ -1,89 +1,62 @@
-# Colors
-GREEN		= \033[0;32m
-RED			= \033[0;31m
-YELLOW		= \033[0;33m
-BLUE		= \033[0;34m
-RESET		= \033[0m
+NAME = inception
+COMPOSE =  docker compose -f srcs/docker-compose.yml
+DATA_PATH = /home/${USER}/data
 
-NAME		= inception
+# Regla principal: levanta todo
+all: setup build
+	@printf "Lanzando configuración de ${NAME}...\n"
+	${COMPOSE} up -d
 
-SRCS_DIR	= ./srcs
-COMPOSE		= docker compose -f $(SRCS_DIR)/docker-compose.yml
+# Crea los directorios necesarios, el archivo .env y los secretos si no existen
+setup:
+	@printf "Configurando entorno para ${NAME}...\n"
+	@mkdir -p $(DATA_PATH)/mariadb
+	@mkdir -p $(DATA_PATH)/wordpress
+	@mkdir -p srcs/secrets
+	@if [ ! -f srcs/.env ]; then \
+		echo "Creando archivo .env predeterminado..."; \
+		echo "SQL_DATABASE=inception" > srcs/.env; \
+		echo "SQL_USER=user42" >> srcs/.env; \
+		echo "WP_URL=localhost" >> srcs/.env; \
+		echo "WP_TITLE=Inception" >> srcs/.env; \
+		echo "WP_ADMIN_USER=admin" >> srcs/.env; \
+		echo "WP_ADMIN_PASSWORD=adminpass" >> srcs/.env; \
+		echo "WP_ADMIN_EMAIL=admin@example.com" >> srcs/.env; \
+		echo "WP_USER=colleague" >> srcs/.env; \
+		echo "WP_USER_PASSWORD=userpass" >> srcs/.env; \
+		echo "WP_USER_EMAIL=user@example.com" >> srcs/.env; \
+	fi
+	@if [ ! -f srcs/secrets/db_password.txt ]; then \
+		echo "Creando secreto db_password..."; \
+		echo "password42" > srcs/secrets/db_password.txt; \
+	fi
+	@if [ ! -f srcs/secrets/db_root_password.txt ]; then \
+		echo "Creando secreto db_root_password..."; \
+		echo "root42" > srcs/secrets/db_root_password.txt; \
+	fi
 
-# Targets
-all: build up
-
-#	@echo "$(YELLOW)Building Docker images...$(RESET)"
+# Construye las imágenes
 build:
-	$(COMPOSE) build --no-cache
+	@printf "Construyendo imágenes de ${NAME}...\n"
+	${COMPOSE} build 
 
-#	@echo "$(GREEN)Starting $(NAME)...$(RESET)"
-up:
-	$(COMPOSE) up -d --build
-
-#	@echo "$(RED)Stopping $(NAME)...$(RESET)"
+# Detiene los contenedores
 down:
-	$(COMPOSE) down
+	@printf "Deteniendo contenedores de ${NAME}...\n"
+	${COMPOSE} down
 
-re: down build up
+# Limpieza profunda
+clean: down 
+	@printf "Limpiando configuración de ${NAME}...\n"
+	@docker system prune -a
 
-#	@echo "$(RED)Stopping and removing containers...$(RESET)"
-clean:
-	$(COMPOSE) down
+# Borrado total
+fclean: clean 
+	@printf "Borrando volúmenes y datos de ${NAME}...\n"
+	@sudo rm -rf $(DATA_PATH)
+	@rm -f srcs/.env
+	@rm -rf srcs/secrets
 
-#	@echo "$(RED)Removing all volumes and images...$(RESET)"
-fclean: clean
-	$(COMPOSE) down --volumes --rmi all
-	docker system prune -f
+re: fclean all
 
-logs:
-	$(COMPOSE) logs -f
-
-ps:
-	$(COMPOSE) ps
-
-status:
-	@echo "$(BLUE)Containers status:$(RESET)"
-	$(COMPOSE) ps
-	@echo "\n$(BLUE)Volumes:$(RESET)"
-	docker volume ls | grep inception || echo "No volumes found"
-
-nginx:
-	$(COMPOSE) exec nginx sh
-
-wordpress:
-	$(COMPOSE) exec wordpress sh
-
-mariadb:
-	$(COMPOSE) exec mariadb sh
-
-# UP ONLY MariaDB
-mariadb-up:
-	@mkdir -p /home/${USER}/data/mariadb
-	$(COMPOSE) up -d --build mariadb
-# check logs MariaDB
-mariadb-logs:
-	$(COMPOSE) logs -f mariadb
-
-# Bonus targets (útil cuando añadas redis, ftp, etc.)
-bonus: re
-
-# Ayuda
-help:
-	@echo "$(BLUE)=== Inception Makefile Commands ===$(RESET)"
-	@echo "make all          → Build and start the project"
-	@echo "make build        → Build all Docker images"
-	@echo "make up           → Start containers in detached mode"
-	@echo "make down         → Stop containers"
-	@echo "make re           → Restart the entire project"
-	@echo "make clean        → Stop containers"
-	@echo "make fclean       → Full cleanup (containers + volumes + images)"
-	@echo "make logs         → Show logs in real time"
-	@echo "make ps           → Show running containers"
-	@echo "make status       → Show containers and volumes"
-	@echo "make nginx        → Enter nginx container"
-	@echo "make wordpress    → Enter wordpress container"
-	@echo "make mariadb      → Enter mariadb container"
-	@echo "make help         → Show this help"
-
-.PHONY: all build up down re clean fclean logs ps status nginx wordpress mariadb bonus help
+.PHONY: all build down clean fclean re setup
