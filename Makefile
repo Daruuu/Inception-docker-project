@@ -25,7 +25,7 @@ setup:
 		echo "WP_USER=colleague" >> srcs/.env; \
 		echo "WP_USER_PASSWORD=userpass" >> srcs/.env; \
 		echo "WP_USER_EMAIL=user@example.com" >> srcs/.env; \
-		echo "NGINX_PORT=443" >> srcs/.env; \
+		echo "NGINX_PORT=8443" >> srcs/.env;
 	fi
 	@if [ ! -f srcs/secrets/db_password.txt ]; then \
 		echo "Creando secreto db_password..."; \
