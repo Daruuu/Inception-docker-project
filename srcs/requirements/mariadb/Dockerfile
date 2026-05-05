@@ -1,5 +1,5 @@
 # Use the penultim version of stable Alpine
-FROM alpine:3.19
+FROM alpine:3.21.0
 
 # Actualizamos el sistema e instalamos MariaDB y el cliente
 RUN apk update && \

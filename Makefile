@@ -1,89 +1,104 @@
-# Colors
-GREEN		= \033[0;32m
-RED			= \033[0;31m
-YELLOW		= \033[0;33m
-BLUE		= \033[0;34m
-RESET		= \033[0m
+# Variables de identidad
+NAME          = inception
+LOGIN         = $(USER)
+DATA_PATH     = /home/$(LOGIN)/data
 
-NAME		= inception
+# Rutas y Comandos
+SRCS_DIR      = ./srcs
+COMPOSE       = docker compose -f $(SRCS_DIR)/docker-compose.yml
 
-SRCS_DIR	= ./srcs
-COMPOSE		= docker compose -f $(SRCS_DIR)/docker-compose.yml
+# Colores para una terminal bonita
+GREEN         = \033[0;32m
+RED           = \033[0;31m
+YELLOW        = \033[0;33m
+BLUE          = \033[0;34m
+RESET         = \033[0m
 
-# Targets
-all: build up
+# --- REGLAS PRINCIPALES ---
 
-#	@echo "$(YELLOW)Building Docker images...$(RESET)"
+all: setup build up
+
+# 1. Preparación del entorno
+setup:
+	@printf "$(BLUE)Configurando entorno para $(NAME)...$(RESET)\n"
+	@mkdir -p $(DATA_PATH)/mariadb
+	@mkdir -p $(DATA_PATH)/wordpress
+	@mkdir -p $(SRCS_DIR)/secrets
+	@# Generación del .env si no existe
+	@if [ ! -f $(SRCS_DIR)/.env ]; then \
+		echo "$(YELLOW)Creando archivo .env...$(RESET)"; \
+		echo "SQL_DATABASE=inception" > $(SRCS_DIR)/.env; \
+		echo "SQL_USER=$(LOGIN)" >> $(SRCS_DIR)/.env; \
+		echo "WP_URL=$(LOGIN).42.fr" >> $(SRCS_DIR)/.env; \
+		echo "WP_TITLE=Inception" >> $(SRCS_DIR)/.env; \
+		echo "WP_ADMIN_USER=$(LOGIN)_admin" >> $(SRCS_DIR)/.env; \
+		echo "WP_ADMIN_EMAIL=$(LOGIN)@student.42.fr" >> $(SRCS_DIR)/.env; \
+		echo "WP_USER=colleague" >> $(SRCS_DIR)/.env; \
+		echo "WP_USER_EMAIL=user@example.com" >> $(SRCS_DIR)/.env; \
+	fi
+	@# Generación de secretos con OpenSSL (Seguridad Pro)
+	@if [ ! -f $(SRCS_DIR)/secrets/db_password.txt ]; then \
+		openssl rand -base64 16 > $(SRCS_DIR)/secrets/db_password.txt; \
+	fi
+	@if [ ! -f $(SRCS_DIR)/secrets/db_root_password.txt ]; then \
+		openssl rand -base64 16 > $(SRCS_DIR)/secrets/db_root_password.txt; \
+	fi
+	@if [ ! -f $(SRCS_DIR)/secrets/wp_admin_password.txt ]; then \
+		openssl rand -base64 16 > $(SRCS_DIR)/secrets/wp_admin_password.txt; \
+	fi
+
+# 2. Construcción
 build:
-	$(COMPOSE) build --no-cache
+	@printf "$(YELLOW)Construyendo imágenes de $(NAME)...$(RESET)\n"
+	@$(COMPOSE) build
 
-#	@echo "$(GREEN)Starting $(NAME)...$(RESET)"
+# 3. Lanzamiento
 up:
-	$(COMPOSE) up -d --build
+	@printf "$(GREEN)Lanzando contenedores de $(NAME)...$(RESET)\n"
+	@$(COMPOSE) up -d
 
-#	@echo "$(RED)Stopping $(NAME)...$(RESET)"
+# --- REGLAS DE LIMPIEZA ---
+
 down:
-	$(COMPOSE) down
+	@printf "$(RED)Deteniendo contenedores...$(RESET)\n"
+	@$(COMPOSE) down
 
-re: down build up
+clean: down
+	@printf "$(RED)Eliminando contenedores y redes...$(RESET)\n"
+	@$(COMPOSE) down --rmi all
 
-#	@echo "$(RED)Stopping and removing containers...$(RESET)"
-clean:
-	$(COMPOSE) down
+fclean:
+	@printf "$(RED)BORRADO TOTAL (Datos, Secretos y Contenedores)...$(RESET)\n"
+	@$(COMPOSE) down -v --rmi all
+	@sudo rm -rf $(DATA_PATH)
+	@rm -f $(SRCS_DIR)/.env
+	@rm -rf $(SRCS_DIR)/secrets
+	@docker system prune -af
 
-#	@echo "$(RED)Removing all volumes and images...$(RESET)"
-fclean: clean
-	$(COMPOSE) down --volumes --rmi all
-	docker system prune -f
+re: fclean all
+
+# --- UTILIDADES Y DEBUG ---
 
 logs:
-	$(COMPOSE) logs -f
+	@$(COMPOSE) logs -f
 
 ps:
-	$(COMPOSE) ps
+	@$(COMPOSE) ps
 
 status:
-	@echo "$(BLUE)Containers status:$(RESET)"
-	$(COMPOSE) ps
-	@echo "\n$(BLUE)Volumes:$(RESET)"
-	docker volume ls | grep inception || echo "No volumes found"
+	@printf "$(BLUE)Estado de los contenedores:$(RESET)\n"
+	@$(COMPOSE) ps
+	@printf "\n$(BLUE)Volúmenes:$(RESET)\n"
+	@docker volume ls | grep $(NAME) || echo "No hay volúmenes activos."
 
+# Acceso rápido a contenedores
 nginx:
-	$(COMPOSE) exec nginx sh
-
-wordpress:
-	$(COMPOSE) exec wordpress sh
+	@$(COMPOSE) exec nginx sh
 
 mariadb:
-	$(COMPOSE) exec mariadb sh
+	@$(COMPOSE) exec mariadb sh
 
-# UP ONLY MariaDB
-mariadb-up:
-	@mkdir -p /home/${USER}/data/mariadb
-	$(COMPOSE) up -d --build mariadb
-# check logs MariaDB
-mariadb-logs:
-	$(COMPOSE) logs -f mariadb
+wordpress:
+	@$(COMPOSE) exec wordpress sh
 
-# Bonus targets (útil cuando añadas redis, ftp, etc.)
-bonus: re
-
-# Ayuda
-help:
-	@echo "$(BLUE)=== Inception Makefile Commands ===$(RESET)"
-	@echo "make all          → Build and start the project"
-	@echo "make build        → Build all Docker images"
-	@echo "make up           → Start containers in detached mode"
-	@echo "make down         → Stop containers"
-	@echo "make re           → Restart the entire project"
-	@echo "make clean        → Stop containers"
-	@echo "make fclean       → Full cleanup (containers + volumes + images)"
-	@echo "make logs         → Show logs in real time"
-	@echo "make ps           → Show running containers"
-	@echo "make status       → Show containers and volumes"
-	@echo "make nginx        → Enter nginx container"
-	@echo "make wordpress    → Enter wordpress container"
-	@echo "make mariadb      → Enter mariadb container"
-	@echo "make help         → Show this help"
-
-.PHONY: all build up down re clean fclean logs ps status nginx wordpress mariadb bonus help
+.PHONY: all setup build up down clean fclean re logs ps status nginx mariadb wordpress

@@ -1,72 +1,46 @@
 #!/bin/sh
 
-# Verifica si la base de datos ya está inicializada.
-# Si el directorio /var/lib/mysql/mysql existe, asumimos que ya está configurada.
+# 1. Leer secretos si existen (Docker Secrets)
+if [ -f "/run/secrets/db_password" ]; then
+    SQL_PASSWORD=$(cat /run/secrets/db_password)
+fi
+if [ -f "/run/secrets/db_root_password" ]; then
+    SQL_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
+fi
+
+# Validar variables críticas
+if [ -z "$SQL_DATABASE" ] || [ -z "$SQL_USER" ] || [ -z "$SQL_PASSWORD" ]; then
+    echo "ERROR: SQL_DATABASE, SQL_USER o SQL_PASSWORD no están definidos."
+    exit 1
+fi
+
+# 2. Instala las tablas básicas si no existen
 if [ ! -d "/var/lib/mysql/mysql" ]; then
-    echo "=> Instalando la base de datos de MariaDB..."
-    
-    # Inicializa el directorio de datos de MariaDB
-    # Esto crea las tablas del sistema necesarias para MariaDB
-    mariadb-install-db --user=mysql --datadir=/var/lib/mysql --skip-test-db > /dev/null
+    echo "Inicializando base de datos MariaDB..."
+    mysql_install_db --user=mysql --datadir=/var/lib/mysql > /dev/null
 
-    echo "=> Iniciando MariaDB temporalmente en background..."
-    # Iniciamos mysqld en background usando mysqld_safe (el envoltorio recomendado)
-    # y esperamos a que el socket esté disponible para poder ejecutar comandos.
-    mysqld --user=mysql --datadir=/var/lib/mysql &
-    
-    # Esperamos hasta que MariaDB esté listo para recibir conexiones
-    while ! mariadb-admin ping --silent; do
-        sleep 1
-    done
-
-    echo "=> Leyendo secretos de Docker..."
-    # Leemos las contraseñas desde los archivos inyectados por Docker Secrets
-    # Usamos tr -d '\n' para asegurarnos de que no haya saltos de línea extraños al leer el archivo
-    _DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password | tr -d '\n')
-    _DB_PASSWORD=$(cat /run/secrets/db_password | tr -d '\n')
-    # Nota: DB_NAME y DB_USER normalmente vienen del .env, no son secretos críticos
-    
-    echo "=> Configurando usuarios y bases de datos..."
-
-    # Creamos un archivo temporal con los comandos SQL
+    # 3. Crea el archivo temporal SQL para la configuración inicial
     cat << EOF > /tmp/init.sql
--- Borramos cualquier usuario root sin contraseña que venga por defecto
-DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
--- Cambiamos la contraseña del usuario root local
-ALTER USER 'root'@'localhost' IDENTIFIED BY '${_DB_ROOT_PASSWORD}';
+USE mysql;
+FLUSH PRIVILEGES;
 
--- Creamos la base de datos para WordPress si no existe
-CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${SQL_ROOT_PASSWORD}';
 
--- Creamos el usuario de WordPress
-CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${_DB_PASSWORD}';
--- Le damos todos los permisos al usuario de WordPress sobre su base de datos
-GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
+CREATE DATABASE IF NOT EXISTS \`${SQL_DATABASE}\`;
+CREATE USER IF NOT EXISTS \`${SQL_USER}\`@'%' IDENTIFIED BY '${SQL_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${SQL_DATABASE}\`.* TO \`${SQL_USER}\`@'%';
 
--- Aplicamos los cambios
 FLUSH PRIVILEGES;
 EOF
 
-    # Ejecutamos el archivo SQL usando el cliente mariadb
-    mariadb -u root < /tmp/init.sql
-    
-    # Borramos el archivo temporal por seguridad
+    # 4. Ejecuta la configuración (bootstrap)
+    mysqld --user=mysql --bootstrap < /tmp/init.sql
     rm -f /tmp/init.sql
-
-    echo "=> Apagando MariaDB temporal..."
-    # Apagamos el servidor temporal de forma segura
-    mariadb-admin -u root -p"${_DB_ROOT_PASSWORD}" shutdown
-    
-    # Esperamos a que el proceso en background termine completamente
-    wait
-    
-    echo "=> Configuración inicial completada."
+    echo "Base de datos inicializada correctamente."
 else
-    echo "=> La base de datos ya está configurada."
+    echo "La base de datos ya existe. Saltando inicialización."
 fi
 
-echo "=> Iniciando MariaDB (PID 1)..."
-# Ejecutamos el demonio mysqld en primer plano (foreground). 
-# 'exec' reemplaza el proceso actual (el script bash) por mysqld, 
-# convirtiéndolo en el PID 1 del contenedor. Esto permite que Docker capture las señales (como docker stop).
+# 5. Iniciamos MariaDB de forma normal (PID 1)
+echo "Iniciando MariaDB como PID 1..."
 exec mysqld --user=mysql --console
