@@ -2,6 +2,7 @@
 NAME          = inception
 LOGIN         = $(USER)
 DATA_PATH     = /home/$(LOGIN)/data
+DOMAIN        = dasalaza.42.fr
 
 # Rutas y Comandos
 SRCS_DIR      = ./srcs
@@ -29,12 +30,13 @@ setup:
 		echo "$(YELLOW)Creando archivo .env...$(RESET)"; \
 		echo "SQL_DATABASE=inception" > $(SRCS_DIR)/.env; \
 		echo "SQL_USER=$(LOGIN)" >> $(SRCS_DIR)/.env; \
-		echo "WP_URL=$(LOGIN).42.fr" >> $(SRCS_DIR)/.env; \
+		echo "WP_URL=$(DOMAIN)" >> $(SRCS_DIR)/.env; \
 		echo "WP_TITLE=Inception" >> $(SRCS_DIR)/.env; \
 		echo "WP_ADMIN_USER=$(LOGIN)_admin" >> $(SRCS_DIR)/.env; \
 		echo "WP_ADMIN_EMAIL=$(LOGIN)@student.42.fr" >> $(SRCS_DIR)/.env; \
 		echo "WP_USER=colleague" >> $(SRCS_DIR)/.env; \
 		echo "WP_USER_EMAIL=user@example.com" >> $(SRCS_DIR)/.env; \
+		echo "NGINX_PORT=443" >> $(SRCS_DIR)/.env; \
 	fi
 	@# Generación de secretos con OpenSSL (Seguridad Pro)
 	@if [ ! -f $(SRCS_DIR)/secrets/db_password.txt ]; then \
