@@ -4,6 +4,7 @@
 services:
   mariadb:
     container_name: mariadb
+    image: mariadb
     build:
       context: .
       dockerfile: requirements/mariadb/Dockerfile
@@ -20,6 +21,7 @@ services:
 
   wordpress:
     container_name: wordpress
+    image: wordpress
     build:
       context: .
       dockerfile: requirements/wordpress/Dockerfile
@@ -40,6 +42,7 @@ services:
     build:
       context: .
       dockerfile: requirements/nginx/Dockerfile
+    image: nginx
     container_name: nginx
     depends_on:
       - wordpress

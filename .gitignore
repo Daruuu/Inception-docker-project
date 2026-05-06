@@ -54,4 +54,8 @@ wp-config.php
 .idea
 *.iml
 out
-gen
+# Inception Project
+.env
+srcs/.env
+secrets/
+srcs/secrets/
