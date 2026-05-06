@@ -7,10 +7,17 @@ export PHP_OPTIONS="-d memory_limit=512M"
 if [ -f "/run/secrets/db_password" ]; then
     SQL_PASSWORD=$(cat /run/secrets/db_password)
 fi
+if [ -f "/run/secrets/wp_admin_password" ]; then
+    WP_ADMIN_PASSWORD=$(cat /run/secrets/wp_admin_password)
+fi
 
 # Validar variables
 if [ -z "$SQL_DATABASE" ] || [ -z "$SQL_USER" ] || [ -z "$SQL_PASSWORD" ]; then
     echo "ERROR: Variables de base de datos no definidas."
+    exit 1
+fi
+if [ -z "$WP_ADMIN_PASSWORD" ]; then
+    echo "ERROR: WP_ADMIN_PASSWORD no está definida."
     exit 1
 fi
 

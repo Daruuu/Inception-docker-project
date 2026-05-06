@@ -30,6 +30,7 @@ services:
       - .env
     secrets:
       - db_password
+      - wp_admin_password
     networks:
       - inception_network
     volumes:
@@ -44,7 +45,6 @@ services:
       - wordpress
     ports:
       - "${NGINX_PORT}:443" # host-port : port-container
-    #      - "443:443"
     networks:
       - inception_network
     volumes:
@@ -87,3 +87,5 @@ secrets:
     file: secrets/db_password.txt
   db_root_password:
     file: secrets/db_root_password.txt
+  wp_admin_password:
+    file: secrets/wp_admin_password.txt
