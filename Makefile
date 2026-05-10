@@ -24,7 +24,12 @@ setup:
 	@printf "$(BLUE)Configurando entorno para $(NAME)...$(RESET)\n"
 	@mkdir -p $(DATA_PATH)/mariadb
 	@mkdir -p $(DATA_PATH)/wordpress
-	@mkdir -p $(SRCS_DIR)/secrets
+	@mkdir -p $(DATA_PATH)/static
+	@mkdir -p $(DATA_PATH)/netdata/cache
+	@mkdir -p $(DATA_PATH)/netdata/config
+	@mkdir -p $(DATA_PATH)/netdata/lib
+	@mkdir -p $(DATA_PATH)/secrets
+
 	@# Generación del .env si no existe
 	@if [ ! -f $(SRCS_DIR)/.env ]; then \
 		echo "$(YELLOW)Creando archivo .env...$(RESET)"; \
@@ -34,19 +39,30 @@ setup:
 		echo "WP_TITLE=$(NAME)" >> $(SRCS_DIR)/.env; \
 		echo "WP_ADMIN_USER=$(LOGIN)_super" >> $(SRCS_DIR)/.env; \
 		echo "WP_ADMIN_EMAIL=$(LOGIN)@student.42.fr" >> $(SRCS_DIR)/.env; \
-		echo "WP_USER=colleague" >> $(SRCS_DIR)/.env; \
-		echo "WP_USER_EMAIL=user@example.com" >> $(SRCS_DIR)/.env; \
+		echo "WP_USER=$(USER)42" >> $(SRCS_DIR)/.env; \
+		echo "WP_USER_EMAIL=$(USER)42@example.com" >> $(SRCS_DIR)/.env; \
 		echo "NGINX_PORT=443" >> $(SRCS_DIR)/.env; \
 	fi
 	@# Generate passwords with OpenSSL in secrets
 	@if [ ! -f $(SRCS_DIR)/secrets/db_password.txt ]; then \
-		openssl rand -base64 16 > $(SRCS_DIR)/secrets/db_password.txt; \
+		echo "Creando db_password..."; \
+		openssl rand -base64 8 > $(SRCS_DIR)/secrets/db_password.txt; \
 	fi
 	@if [ ! -f $(SRCS_DIR)/secrets/db_root_password.txt ]; then \
-		openssl rand -base64 16 > $(SRCS_DIR)/secrets/db_root_password.txt; \
+		echo "Creando db_root_n_password..."; \
+		openssl rand -base64 8 > $(SRCS_DIR)/secrets/db_root_password.txt; \
 	fi
 	@if [ ! -f $(SRCS_DIR)/secrets/wp_admin_password.txt ]; then \
-		openssl rand -base64 16 > $(SRCS_DIR)/secrets/wp_admin_password.txt; \
+		echo "Creando wp_admin_password..."; \
+		openssl rand -base64 8 > $(SRCS_DIR)/secrets/wp_admin_password.txt; \
+	fi
+	@if [ ! -f $(SRCS_DIR)/secrets/wp_user_password.txt ]; then \
+		echo "Creando wp_user_password..."; \
+		openssl rand -base64 16 > srcs/secrets/wp_user_password.txt; \
+	fi
+	@if [ ! -f $(SRCS_DIR)/secrets/ftp_password.txt ]; then \
+		echo "Creando ftp_password..."; \
+		openssl rand -base64 16 > srcs/secrets/ftp_password.txt; \
 	fi
 
 # 2. Construcción

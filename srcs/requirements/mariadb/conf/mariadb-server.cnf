@@ -1,10 +1,6 @@
-[server]
-
 [mysqld]
-# Especificamos el usuario bajo el cual correrá MariaDB
-user = mysql
 
-# standard port of MariaDB
+user = mysql
 port = 3306
 
 # Especificamos dónde se guardarán los datos. 
@@ -12,7 +8,8 @@ port = 3306
 datadir = /var/lib/mysql
 
 # Allow connections from any IP (0.0.0.0).
-# update default port 127.0.0.1 to any IP address, if not update this wordpress cant connect to MariaDB.
+# update default port 127.0.0.1 to any IP address
+# if not update this wordpress cant connect to MariaDB.
 bind-address = 0.0.0.0
 
 # setup where create the sockets.
