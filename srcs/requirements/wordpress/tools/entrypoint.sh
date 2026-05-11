@@ -10,14 +10,17 @@ fi
 if [ -f "/run/secrets/wp_admin_password" ]; then
     WP_ADMIN_PASSWORD=$(cat /run/secrets/wp_admin_password)
 fi
+if [ -f "/run/secrets/wp_user_password" ]; then
+    WP_USER_PASSWORD=$(cat /run/secrets/wp_user_password)
+fi
 
 # Validar variables
 if [ -z "$SQL_DATABASE" ] || [ -z "$SQL_USER" ] || [ -z "$SQL_PASSWORD" ]; then
     echo "ERROR: Variables de base de datos no definidas."
     exit 1
 fi
-if [ -z "$WP_ADMIN_PASSWORD" ]; then
-    echo "ERROR: WP_ADMIN_PASSWORD no está definida."
+if [ -z "$WP_ADMIN_PASSWORD" ] || [ -z "$WP_USER_PASSWORD" ]; then
+    echo "ERROR: Contraseñas de WordPress (admin o user) no definidas en secretos."
     exit 1
 fi
 
@@ -69,20 +72,25 @@ if [ ! -f "/var/www/html/wordpress/wp-config.php" ]; then
         --allow-root
 
     # +++++++++++++++++++++++ BONUS: Configuración de Redis Cache
-    echo "Configurando Redis Cache..."
-    php -d memory_limit=512M /usr/local/bin/wp plugin install redis-cache --activate --allow-root
-
-     IMPORTANTE: Configurar Redis ANTES de habilitarlo
-    php -d memory_limit=512M /usr/local/bin/wp config set WP_REDIS_HOST redis --allow-root
-    php -d memory_limit=512M /usr/local/bin/wp config set WP_REDIS_PORT 6379 --raw --allow-root
-    php -d memory_limit=512M /usr/local/bin/wp config set WP_CACHE true --raw --allow-root
-
-    # Reintentar habilitar Redis (esperando a que el contenedor esté listo)
-    echo "Habilitando Redis Object Cache..."
-    until php -d memory_limit=512M /usr/local/bin/wp redis enable --allow-root; do
-        echo "Redis no responde todavía. Reintentando en 2 segundos..."
-        sleep 2
-    done
+    if ping -c 1 redis > /dev/null 2>&1; then
+        echo "Configurando Redis Cache..."
+        php -d memory_limit=512M /usr/local/bin/wp plugin install redis-cache --activate --allow-root
+        
+        # IMPORTANTE: Configurar Redis ANTES de habilitarlo
+        php -d memory_limit=512M /usr/local/bin/wp config set WP_REDIS_HOST redis --allow-root
+        php -d memory_limit=512M /usr/local/bin/wp config set WP_REDIS_PORT 6379 --raw --allow-root
+        php -d memory_limit=512M /usr/local/bin/wp config set WP_CACHE true --raw --allow-root
+        
+        # Reintentar habilitar Redis
+        echo "Habilitando Redis Object Cache..."
+        until php -d memory_limit=512M /usr/local/bin/wp redis enable --allow-root; do
+            echo "Redis no responde todavía. Reintentando en 2 segundos..."
+            sleep 2
+        done
+        echo "Redis Cache configurado correctamente."
+    else
+        echo "Redis no está disponible (host 'redis' no alcanzable). Saltando configuración de caché."
+    fi
 
     echo "WordPress instalado correctamente con Redis Cache."
 else

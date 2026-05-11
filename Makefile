@@ -29,6 +29,7 @@ setup:
 	@mkdir -p $(DATA_PATH)/netdata/config
 	@mkdir -p $(DATA_PATH)/netdata/lib
 	@mkdir -p $(DATA_PATH)/secrets
+	@mkdir -p $(SRCS_DIR)/secrets
 
 	@# Generación del .env si no existe
 	@if [ ! -f $(SRCS_DIR)/.env ]; then \
@@ -42,6 +43,7 @@ setup:
 		echo "WP_USER=$(USER)42" >> $(SRCS_DIR)/.env; \
 		echo "WP_USER_EMAIL=$(USER)42@example.com" >> $(SRCS_DIR)/.env; \
 		echo "NGINX_PORT=443" >> $(SRCS_DIR)/.env; \
+		echo "USER=${USER}" >> $(SRCS_DIR)/.env; \
 	fi
 	@# Generate passwords with OpenSSL in secrets
 	@if [ ! -f $(SRCS_DIR)/secrets/db_password.txt ]; then \

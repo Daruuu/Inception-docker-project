@@ -21,7 +21,7 @@ RUN apk update && apk add --no-cache \
     unzip \
     mariadb-client
 
-RUN ln -sf /usr/bin/php82 /usr/bin/php
+RUN ln -sf /usr/bin/php83 /usr/bin/php
 
 # Instalamos wp-cli (herramienta fundamental para configurar WP por comandos)
 RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
@@ -29,7 +29,7 @@ RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.ph
     && mv wp-cli.phar /usr/local/bin/wp
 
 # Configuramos PHP-FPM para que escuche en el puerto 9000
-RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/g' /etc/php83/php-fpm.d/www.tools
+RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/g' /etc/php83/php-fpm.d/www.conf
 
 WORKDIR /var/www/html/wordpress
 

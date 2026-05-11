@@ -61,7 +61,7 @@ services:
     depends_on:
       - wordpress
     ports:
-      - "${NGINX_PORT}:443" # host-port : port-container
+      - "${NGINX_PORT:-443}:443"
     networks:
       - inception_network
     volumes:
@@ -70,6 +70,94 @@ services:
       - db_password
     env_file:
       - .env
+    restart: always
+
+  redis:
+    image: redis
+    build:
+      context: .
+      dockerfile: requirements/bonus/redis/Dockerfile
+    container_name: redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - inception_network
+    restart: always
+
+  ftp:
+    image: ftp
+    build:
+      context: .
+      dockerfile: requirements/bonus/ftp/Dockerfile
+    container_name: ftp
+    ports:
+      - "21:21"
+      - "21100-21110:21100-21110"   # Rango de puertos para transferencia de datos (Modo Pasivo)
+    env_file:
+      - .env
+    environment:
+      - FTP_USER=${WP_USER}
+    volumes:
+      - wordpress_data:/var/www/html/wordpress
+    networks:
+      - inception_network
+    secrets:
+      - wp_user_password
+      - ftp_password
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    restart: always
+
+  adminer:
+    image: adminer
+    build:
+      context: .
+      dockerfile: requirements/bonus/adminer/Dockerfile
+    container_name: adminer
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - inception_network
+    restart: always
+
+  netdata:
+    image: netdata
+    build:
+      context: .
+      dockerfile: requirements/bonus/netdata/Dockerfile
+    container_name: netdata
+    hostname: netdata
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor=unconfined
+    networks:
+      - inception_network
+    volumes:
+      - netdata_config:/etc/netdata
+      - netdata_lib:/var/lib/netdata
+      - netdata_cache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: always
+
+  static_site:
+    image: static_site
+    build:
+      context: .
+      dockerfile: requirements/bonus/static_site/Dockerfile
+    container_name: static_site
+    networks:
+      - inception_network
     restart: always
 
 # ----------------------------------------
@@ -95,6 +183,36 @@ volumes:
       type: none
       o: bind
       device: /home/${USER}/data/wordpress
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/redis
+  static_site_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/static
+  netdata_config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/netdata/config
+  netdata_lib:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/netdata/lib
+  netdata_cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/netdata/cache
 
 # ----------------------------------------
 # Global Configuration of Secrets
@@ -106,3 +224,7 @@ secrets:
     file: secrets/db_root_password.txt
   wp_admin_password:
     file: secrets/wp_admin_password.txt
+  wp_user_password:
+    file: secrets/wp_user_password.txt
+  ftp_password:
+    file: secrets/ftp_password.txt
