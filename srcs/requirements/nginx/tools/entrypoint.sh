@@ -18,5 +18,5 @@ echo "Configurando server_name como $WP_URL..."
 sed -i "s/server_name dasalaza.42.fr;/server_name $WP_URL;/g" /etc/nginx/http.d/default.conf
 
 # Ejecutamos Nginx en primer plano
-echo "Iniciando Nginx..."
+echo "Init Nginx ..."
 exec nginx -g "daemon off;"
