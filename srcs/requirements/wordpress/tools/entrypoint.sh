@@ -69,23 +69,23 @@ if [ ! -f "/var/www/html/wordpress/wp-config.php" ]; then
         --allow-root
 
     # +++++++++++++++++++++++ BONUS: Configuración de Redis Cache
-#    echo "Configurando Redis Cache..."
-#    php -d memory_limit=512M /usr/local/bin/wp plugin install redis-cache --activate --allow-root
+    echo "Configurando Redis Cache..."
+    php -d memory_limit=512M /usr/local/bin/wp plugin install redis-cache --activate --allow-root
 
-    # IMPORTANTE: Configurar Redis ANTES de habilitarlo
-#    php -d memory_limit=512M /usr/local/bin/wp config set WP_REDIS_HOST redis --allow-root
-#    php -d memory_limit=512M /usr/local/bin/wp config set WP_REDIS_PORT 6379 --raw --allow-root
-#    php -d memory_limit=512M /usr/local/bin/wp config set WP_CACHE true --raw --allow-root
+     IMPORTANTE: Configurar Redis ANTES de habilitarlo
+    php -d memory_limit=512M /usr/local/bin/wp config set WP_REDIS_HOST redis --allow-root
+    php -d memory_limit=512M /usr/local/bin/wp config set WP_REDIS_PORT 6379 --raw --allow-root
+    php -d memory_limit=512M /usr/local/bin/wp config set WP_CACHE true --raw --allow-root
 
     # Reintentar habilitar Redis (esperando a que el contenedor esté listo)
-#    echo "Habilitando Redis Object Cache..."
-#    until php -d memory_limit=512M /usr/local/bin/wp redis enable --allow-root; do
-#        echo "Redis no responde todavía. Reintentando en 2 segundos..."
-#        sleep 2
-#    done
-#
-#    echo "WordPress instalado correctamente con Redis Cache."
-#else
+    echo "Habilitando Redis Object Cache..."
+    until php -d memory_limit=512M /usr/local/bin/wp redis enable --allow-root; do
+        echo "Redis no responde todavía. Reintentando en 2 segundos..."
+        sleep 2
+    done
+
+    echo "WordPress instalado correctamente con Redis Cache."
+else
     echo "WordPress ya está instalado."
 fi
 

@@ -76,7 +76,7 @@ Modified `srcs/requirements/nginx/Dockerfile` to:
    ```
 3. Verify the Nginx config:
    ```bash
-   docker exec nginx cat /etc/nginx/http.d/default.conf | grep server_name
+   docker exec nginx cat /etc/nginx/http.d/default.tools | grep server_name
    ```
 
 

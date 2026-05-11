@@ -112,11 +112,17 @@ status:
 # Acceso rápido a contenedores
 nginx:
 	@$(COMPOSE) exec nginx sh
+nginx-up:
+	@docker compose -f srcs/docker-compose.yml up -d nginx
 
 mariadb:
 	@$(COMPOSE) exec mariadb sh
+mariadb-up:
+	@docker compose -f srcs/docker-compose.yml up -d mariadb
 
 wordpress:
 	@$(COMPOSE) exec wordpress sh
+wordpress-up:
+	@docker compose -f srcs/docker-compose.yml up -d wordpress
 
 .PHONY: all setup build up down clean fclean re logs ps status nginx mariadb wordpress
