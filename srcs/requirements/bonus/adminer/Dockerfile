@@ -1,4 +1,4 @@
-FROM alpine:3.22
+FROM alpine:3.22.0
 
 # Instalamos PHP y las extensiones necesarias para conectar con MariaDB
 RUN apk update && apk add --no-cache \

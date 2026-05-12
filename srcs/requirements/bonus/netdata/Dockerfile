@@ -1,4 +1,4 @@
-FROM alpine:3.22
+FROM alpine:3.22.0
 
 # 1. Instalar netdata y dependencias para plugins
 RUN apk update && apk add --no-cache netdata bash
@@ -12,4 +12,3 @@ EXPOSE 19999
 
 # 5. Lanzar en primer plano (-D) escuchando en todas las interfaces
 CMD ["netdata", "-D", "-i", "0.0.0.0"]
-
