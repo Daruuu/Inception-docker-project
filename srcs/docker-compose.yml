@@ -4,7 +4,7 @@
 services:
   mariadb:
     container_name: mariadb
-    image: mariadb
+    image: mariadb:inception
     build:
       context: .
       dockerfile: requirements/mariadb/Dockerfile
@@ -27,7 +27,7 @@ services:
 
   wordpress:
     container_name: wordpress
-    image: wordpress
+    image: wordpress:inception
     build:
       context: .
       dockerfile: requirements/wordpress/Dockerfile
@@ -53,11 +53,11 @@ services:
     restart: always
 
   nginx:
+    container_name: nginx
+    image: nginx:inception
     build:
       context: .
       dockerfile: requirements/nginx/Dockerfile
-    image: nginx
-    container_name: nginx
     depends_on:
       - wordpress
     ports:
@@ -73,11 +73,11 @@ services:
     restart: always
 
   redis:
-    image: redis
+    container_name: redis
+    image: redis:inception
     build:
       context: .
       dockerfile: requirements/bonus/redis/Dockerfile
-    container_name: redis
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -89,11 +89,11 @@ services:
     restart: always
 
   ftp:
-    image: ftp
+    container_name: ftp
+    image: ftp:inception
     build:
       context: .
       dockerfile: requirements/bonus/ftp/Dockerfile
-    container_name: ftp
     ports:
       - "21:21"
       - "21100-21110:21100-21110"   # Rango de puertos para transferencia de datos (Modo Pasivo)
@@ -114,11 +114,11 @@ services:
     restart: always
 
   adminer:
-    image: adminer
+    container_name: adminer
+    image: adminer:inception
     build:
       context: .
       dockerfile: requirements/bonus/adminer/Dockerfile
-    container_name: adminer
     depends_on:
       mariadb:
         condition: service_healthy
@@ -127,11 +127,11 @@ services:
     restart: always
 
   netdata:
-    image: netdata
+    container_name: netdata
+    image: netdata:inception
     build:
       context: .
       dockerfile: requirements/bonus/netdata/Dockerfile
-    container_name: netdata
     hostname: netdata
     cap_add:
       - SYS_PTRACE

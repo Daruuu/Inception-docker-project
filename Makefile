@@ -87,7 +87,7 @@ clean: down
 	@printf "$(RED)Eliminando contenedores y redes...$(RESET)\n"
 	@$(COMPOSE) down --rmi all
 
-fclean:
+fclean: clean
 	@printf "$(RED)BORRADO TOTAL (Datos, Secretos y Contenedores)...$(RESET)\n"
 	@$(COMPOSE) down -v --rmi all
 	@sudo rm -rf $(DATA_PATH)
@@ -119,7 +119,7 @@ nginx-up:
 
 mariadb:
 	@$(COMPOSE) exec mariadb sh
-mariadb-up:
+mariadb-up: setup
 	@docker compose -f srcs/docker-compose.yml up -d mariadb
 
 wordpress:
