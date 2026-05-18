@@ -1,55 +1,69 @@
-# Variables
-NAME          = inception
-LOGIN         = $(USER)
-DATA_PATH     = /home/$(USER)/data
-DOMAIN        = dasalaza.42.fr
+# =============================================================================
+# Variables del host (solo Makefile — Fase 1)
+# Los nombres del .env no cambian hasta la Fase 2.
+#
+# Makefile              →  srcs/.env
+# PROJECT_NAME          →  SQL_DATABASE, WP_TITLE
+# STUDENT_LOGIN         →  SQL_USER, WP_ADMIN_*, USER
+# SITE_DOMAIN           →  WP_URL
+# WORDPRESS_AUTHOR_*    →  WP_USER, WP_USER_EMAIL
+# =============================================================================
 
-# paths and commands
-SRCS_DIR      = ./srcs
-COMPOSE       = docker compose -f $(SRCS_DIR)/docker-compose.yml
+PROJECT_NAME           = inception
+STUDENT_LOGIN          = dasalaza
+SITE_DOMAIN            = $(STUDENT_LOGIN).42.fr
+HOST_DATA_PATH         = /home/$(USER)/data
 
-# Colors
-GREEN         = \033[0;32m
-RED           = \033[0;31m
-YELLOW        = \033[0;33m
-BLUE          = \033[0;34m
-RESET         = \033[0m
+# Segundo usuario WordPress (subject: no puede contener "admin")
+WORDPRESS_AUTHOR_LOGIN = $(STUDENT_LOGIN)42
+WORDPRESS_AUTHOR_EMAIL = $(WORDPRESS_AUTHOR_LOGIN)@example.com
+
+# Rutas y comandos
+SRCS_DIR               = ./srcs
+COMPOSE                = docker compose -f $(SRCS_DIR)/docker-compose.yml
+
+# Colores
+GREEN                  = \033[0;32m
+RED                    = \033[0;31m
+YELLOW                 = \033[0;33m
+BLUE                   = \033[0;34m
+RESET                  = \033[0m
 
 all: setup build up
 
 # 1. Setup environment
 setup:
-	@printf "$(BLUE)Setup environment: $(NAME)...$(RESET)\n"
-	@mkdir -p $(DATA_PATH)/mariadb
-	@mkdir -p $(DATA_PATH)/wordpress
-	@mkdir -p $(DATA_PATH)/static
-	@mkdir -p $(DATA_PATH)/netdata/cache
-	@mkdir -p $(DATA_PATH)/netdata/config
-	@mkdir -p $(DATA_PATH)/netdata/lib
-	@mkdir -p $(DATA_PATH)/secrets
+	@printf "$(BLUE)Setup environment: $(PROJECT_NAME)...$(RESET)\n"
+	@mkdir -p $(HOST_DATA_PATH)/mariadb
+	@mkdir -p $(HOST_DATA_PATH)/wordpress
+	@mkdir -p $(HOST_DATA_PATH)/static
+	@mkdir -p $(HOST_DATA_PATH)/netdata/cache
+	@mkdir -p $(HOST_DATA_PATH)/netdata/config
+	@mkdir -p $(HOST_DATA_PATH)/netdata/lib
+	@mkdir -p $(HOST_DATA_PATH)/secrets
 	@mkdir -p $(SRCS_DIR)/secrets
 
-	@# Generate file .env if not exist
+	@# Genera srcs/.env (claves legacy; ver mapeo en cabecera del Makefile)
 	@if [ ! -f $(SRCS_DIR)/.env ]; then \
 		echo "$(YELLOW)Creating file .env...$(RESET)"; \
-		echo "SQL_DATABASE=$(NAME)" > $(SRCS_DIR)/.env; \
-		echo "SQL_USER=$(LOGIN)" >> $(SRCS_DIR)/.env; \
-		echo "WP_URL=$(DOMAIN)" >> $(SRCS_DIR)/.env; \
-		echo "WP_TITLE=$(NAME)" >> $(SRCS_DIR)/.env; \
-		echo "WP_ADMIN_USER=$(LOGIN)_super" >> $(SRCS_DIR)/.env; \
-		echo "WP_ADMIN_EMAIL=$(LOGIN)@student.42.fr" >> $(SRCS_DIR)/.env; \
-		echo "WP_USER=$(USER)42" >> $(SRCS_DIR)/.env; \
-		echo "WP_USER_EMAIL=$(USER)42@example.com" >> $(SRCS_DIR)/.env; \
+		echo "SQL_DATABASE=$(PROJECT_NAME)" > $(SRCS_DIR)/.env; \
+		echo "SQL_USER=$(STUDENT_LOGIN)" >> $(SRCS_DIR)/.env; \
+		echo "WP_URL=$(SITE_DOMAIN)" >> $(SRCS_DIR)/.env; \
+		echo "WP_TITLE=$(PROJECT_NAME)" >> $(SRCS_DIR)/.env; \
+		echo "WP_ADMIN_USER=$(STUDENT_LOGIN)_super" >> $(SRCS_DIR)/.env; \
+		echo "WP_ADMIN_EMAIL=$(STUDENT_LOGIN)@student.42.fr" >> $(SRCS_DIR)/.env; \
+		echo "WP_USER=$(WORDPRESS_AUTHOR_LOGIN)" >> $(SRCS_DIR)/.env; \
+		echo "WP_USER_EMAIL=$(WORDPRESS_AUTHOR_EMAIL)" >> $(SRCS_DIR)/.env; \
 		echo "NGINX_PORT=443" >> $(SRCS_DIR)/.env; \
-		echo "USER=${USER}" >> $(SRCS_DIR)/.env; \
+		echo "USER=$(STUDENT_LOGIN)" >> $(SRCS_DIR)/.env; \
 	fi
-	@# Generate passwords with OpenSSL in secrets
+	@# Contraseñas en secrets (Docker secrets)
 	@if [ ! -f $(SRCS_DIR)/secrets/db_password.txt ]; then \
 		echo "Creando db_password..."; \
 		openssl rand -base64 8 > $(SRCS_DIR)/secrets/db_password.txt; \
 	fi
 	@if [ ! -f $(SRCS_DIR)/secrets/db_root_password.txt ]; then \
-		echo "Creando db_root_n_password..."; \
+		echo "Creando db_root_password..."; \
 		openssl rand -base64 8 > $(SRCS_DIR)/secrets/db_root_password.txt; \
 	fi
 	@if [ ! -f $(SRCS_DIR)/secrets/wp_admin_password.txt ]; then \
@@ -58,21 +72,21 @@ setup:
 	fi
 	@if [ ! -f $(SRCS_DIR)/secrets/wp_user_password.txt ]; then \
 		echo "Creando wp_user_password..."; \
-		openssl rand -base64 8 > srcs/secrets/wp_user_password.txt; \
+		openssl rand -base64 8 > $(SRCS_DIR)/secrets/wp_user_password.txt; \
 	fi
 	@if [ ! -f $(SRCS_DIR)/secrets/ftp_password.txt ]; then \
 		echo "Creando ftp_password..."; \
-		openssl rand -base64 8 > srcs/secrets/ftp_password.txt; \
+		openssl rand -base64 8 > $(SRCS_DIR)/secrets/ftp_password.txt; \
 	fi
 
 # 2. Construcción
 build:
-	@printf "$(YELLOW)Construyendo imágenes de $(NAME)...$(RESET)\n"
+	@printf "$(YELLOW)Construyendo imágenes de $(PROJECT_NAME)...$(RESET)\n"
 	@$(COMPOSE) build
 
 # 3. Lanzamiento
 up:
-	@printf "$(GREEN)Lanzando contenedores de $(NAME)...$(RESET)\n"
+	@printf "$(GREEN)Lanzando contenedores de $(PROJECT_NAME)...$(RESET)\n"
 	@$(COMPOSE) up -d
 
 # --- REGLAS DE LIMPIEZA ---
@@ -88,7 +102,7 @@ clean: down
 fclean: clean
 	@printf "$(RED)BORRADO TOTAL (Datos, Secretos y Contenedores)...$(RESET)\n"
 	@$(COMPOSE) down -v --rmi all
-	@sudo rm -rf $(DATA_PATH)
+	@sudo rm -rf $(HOST_DATA_PATH)
 	@rm -f $(SRCS_DIR)/.env
 	@rm -rf $(SRCS_DIR)/secrets
 	@docker system prune -af
@@ -107,22 +121,22 @@ status:
 	@printf "$(BLUE)Estado de los contenedores:$(RESET)\n"
 	@$(COMPOSE) ps
 	@printf "\n$(BLUE)Volúmenes:$(RESET)\n"
-	@docker volume ls | grep $(NAME) || echo "No hay volúmenes activos."
+	@docker volume ls | grep $(PROJECT_NAME) || echo "No hay volúmenes activos."
 
 # Rules to access fast to containers
 nginx:
 	@$(COMPOSE) exec nginx sh
 nginx-up: setup
-	@docker compose -f srcs/docker-compose.yml up -d nginx
+	@$(COMPOSE) up -d nginx
 
 mariadb:
 	@$(COMPOSE) exec mariadb sh
 mariadb-up: setup
-	@docker compose -f srcs/docker-compose.yml up -d mariadb
+	@$(COMPOSE) up -d mariadb
 
 wordpress:
 	@$(COMPOSE) exec wordpress sh
-wordpress-up:
-	@docker compose -f srcs/docker-compose.yml up -d wordpress
+wordpress-up: setup
+	@$(COMPOSE) up -d wordpress
 
 .PHONY: all setup build up down clean fclean re logs ps status nginx mariadb wordpress
