@@ -1,27 +1,25 @@
-# Variables de identidad
+# Variables
 NAME          = inception
 LOGIN         = $(USER)
 DATA_PATH     = /home/$(USER)/data
 DOMAIN        = dasalaza.42.fr
 
-# Rutas y Comandos
+# paths and commands
 SRCS_DIR      = ./srcs
 COMPOSE       = docker compose -f $(SRCS_DIR)/docker-compose.yml
 
-# Colores para una terminal bonita
+# Colors
 GREEN         = \033[0;32m
 RED           = \033[0;31m
 YELLOW        = \033[0;33m
 BLUE          = \033[0;34m
 RESET         = \033[0m
 
-# --- REGLAS PRINCIPALES ---
-
 all: setup build up
 
-# 1. Preparación del entorno
+# 1. Setup environment
 setup:
-	@printf "$(BLUE)Configurando entorno para $(NAME)...$(RESET)\n"
+	@printf "$(BLUE)Setup environment: $(NAME)...$(RESET)\n"
 	@mkdir -p $(DATA_PATH)/mariadb
 	@mkdir -p $(DATA_PATH)/wordpress
 	@mkdir -p $(DATA_PATH)/static
@@ -31,10 +29,10 @@ setup:
 	@mkdir -p $(DATA_PATH)/secrets
 	@mkdir -p $(SRCS_DIR)/secrets
 
-	@# Generación del .env si no existe
+	@# Generate file .env if not exist
 	@if [ ! -f $(SRCS_DIR)/.env ]; then \
-		echo "$(YELLOW)Creando archivo .env...$(RESET)"; \
-		echo "SQL_DATABASE=inception" > $(SRCS_DIR)/.env; \
+		echo "$(YELLOW)Creating file .env...$(RESET)"; \
+		echo "SQL_DATABASE=$(NAME)" > $(SRCS_DIR)/.env; \
 		echo "SQL_USER=$(LOGIN)" >> $(SRCS_DIR)/.env; \
 		echo "WP_URL=$(DOMAIN)" >> $(SRCS_DIR)/.env; \
 		echo "WP_TITLE=$(NAME)" >> $(SRCS_DIR)/.env; \
@@ -60,11 +58,11 @@ setup:
 	fi
 	@if [ ! -f $(SRCS_DIR)/secrets/wp_user_password.txt ]; then \
 		echo "Creando wp_user_password..."; \
-		openssl rand -base64 16 > srcs/secrets/wp_user_password.txt; \
+		openssl rand -base64 8 > srcs/secrets/wp_user_password.txt; \
 	fi
 	@if [ ! -f $(SRCS_DIR)/secrets/ftp_password.txt ]; then \
 		echo "Creando ftp_password..."; \
-		openssl rand -base64 16 > srcs/secrets/ftp_password.txt; \
+		openssl rand -base64 8 > srcs/secrets/ftp_password.txt; \
 	fi
 
 # 2. Construcción
@@ -97,7 +95,7 @@ fclean: clean
 
 re: fclean all
 
-# --- UTILIDADES Y DEBUG ---
+# --- UTILITIES and DEBUG ---
 
 logs:
 	@$(COMPOSE) logs -f
@@ -111,10 +109,10 @@ status:
 	@printf "\n$(BLUE)Volúmenes:$(RESET)\n"
 	@docker volume ls | grep $(NAME) || echo "No hay volúmenes activos."
 
-# Acceso rápido a contenedores
+# Rules to access fast to containers
 nginx:
 	@$(COMPOSE) exec nginx sh
-nginx-up:
+nginx-up: setup
 	@docker compose -f srcs/docker-compose.yml up -d nginx
 
 mariadb:

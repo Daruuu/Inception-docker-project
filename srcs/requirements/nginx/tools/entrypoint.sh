@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Creamos el directorio de SSL si no existe (por si acaso)
+# Create this dir of SSL if not exist
 mkdir -p /etc/nginx/ssl
 
 # Generamos el certificado SSL usando la variable WP_URL
@@ -14,8 +14,8 @@ fi
 
 # Reemplazamos el nombre de dominio en la configuración de Nginx
 echo "Configurando server_name como $WP_URL..."
-# Buscamos la línea que contiene server_name (que no esté comentada) y la reemplazamos
-sed -i "s/server_name dasalaza.42.fr;/server_name $WP_URL;/g" /etc/nginx/http.d/default.conf
+# Buscamos la línea que contiene server_name: '_' y la reemplazamos
+sed -i "s/server_name _;/server_name $WP_URL;/g" /etc/nginx/http.d/default.conf
 
 # Ejecutamos Nginx en primer plano
 echo "Init Nginx ..."
