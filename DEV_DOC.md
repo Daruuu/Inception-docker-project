@@ -35,12 +35,12 @@ make all
 
 ## 3. Management and Debugging Commands
 
-| Command | Action |
-| :--- | :--- |
-| `make logs` | Stream logs from all containers. |
-| `make ps` | List containers and their status. |
-| `make re` | Complete rebuild (fclean + all). |
-| `make nginx` | Open a shell inside the NGINX container. |
+| Command        | Action                                     |
+|:---------------|:-------------------------------------------|
+| `make logs`    | Stream logs from all containers.           |
+| `make ps`      | List containers and their status.          |
+| `make re`      | Complete rebuild (fclean + all).           |
+| `make nginx`   | Open a shell inside the NGINX container.   |
 | `make mariadb` | Open a shell inside the MariaDB container. |
 
 ## 4. Data Persistence
