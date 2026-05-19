@@ -19,7 +19,7 @@ The project uses a `Makefile` to orchestrate the creation of the environment.
 
 ### Step-by-Step Workflow:
 1. **Pre-build (`make setup`)**:
-   - Creates required directories in the host (`/home/daruuu/data`).
+   - Creates the required persistent data directories on the host (`/home/${USER}/data`). *Note: The Makefile dynamically resolves this using `/home/$(USER)/data` to ensure seamless portability during evaluation.*
    - Generates the `.env` file if it doesn't exist.
    - Generates random passwords using `openssl` in `srcs/secrets/`.
 2. **Build (`make build`)**:
@@ -47,11 +47,12 @@ make all
 Data is persisted using **Docker Named Volumes** configured with a bind-mount driver. This ensures data remains on the host even if containers are deleted.
 
 ### Host Storage Locations:
-- **MariaDB Data**: `/home/daruuu/data/mariadb`
-- **WordPress Files**: `/home/daruuu/data/wordpress`
-- **Redis Data**: `/home/daruuu/data/redis`
-- **Static Site**: `/home/daruuu/data/static`
-- **Monitoring Data**: `/home/daruuu/data/netdata/`
+As required by the subject, all persistent data is stored in the host's home directory under `/home/<login>/data` (where `<login>` is the username of the student running the stack):
+- **MariaDB Data**: `/home/${USER}/data/mariadb`
+- **WordPress Files**: `/home/${USER}/data/wordpress`
+- **Redis Data**: `/home/${USER}/data/redis`
+- **Static Site**: `/home/${USER}/data/static`
+- **Monitoring Data**: `/home/${USER}/data/netdata/`
 
 These paths are defined in `srcs/docker-compose.yml` and managed via the `Makefile`.
 

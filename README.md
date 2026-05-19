@@ -58,12 +58,29 @@ All deployment configurations and build assets are placed in the `srcs` folder, 
 - **WordPress + PHP-FPM**: Pre-configured WordPress instance using PHP-FPM (FastCGI Process Manager) for performance.
 - **MariaDB**: Dedicated database service for WordPress.
 
-#### Bonus microservices
-- **Redis Cache**: Accelerates WordPress page loading via object caching.
-- **FTP Server (vsftpd)**: Secure gateway allowing users to transfer files to the WordPress volume.
-- **Adminer**: Single-file database management tool, proxied securely via NGINX.
-- **Netdata**: Lightweight monitoring agent for real-time host and container performance statistics.
-- **Static Site**: An elegant way to insert the  Webserver project of 42  in a container, served by NGINX.
+#### 🌟 Bonus Microservices Architecture
+
+To elevate the infrastructure, 5 advanced, production-grade microservices were integrated into the custom bridge network, demonstrating a highly modular and secure multi-container architecture:
+
+1.  **Redis Cache (Object Cache)**
+    *   **Architecture & Integration**: An in-memory data store running in a dedicated container (`port 6379`) connected directly to WordPress via the internal bridge network.
+    *   **Functionality**: Eliminates database bottlenecks by caching repetitive database queries. WordPress leverages the `redis-cache` PHP plugin, translating to instantaneous page load speeds and drastically reduced database workloads.
+
+2.  **FTP Server (vsftpd)**
+    *   **Architecture & Integration**: Running a security-hardened `vsftpd` daemon in its own container, sharing the persistent `wordpress_data` volume.
+    *   **Functionality**: Acts as a secure file-management gateway. Administrators can connect using an FTP client (`port 21` and custom passive ports) to securely transfer, update, or backup files directly within the WordPress root directory on the host.
+
+3.  **Adminer (Database Manager)**
+    *   **Architecture & Integration**: A single-file PHP database management tool running in a dedicated container, completely isolated and hidden from direct public ports.
+    *   **Functionality**: Proxied securely under the NGINX subpath `/adminer`. It provides a sleek, lightweight web GUI allowing administrators to inspect MariaDB schemas, tables, and records on the fly without opening MariaDB's external `port 3306` to the WAN, thus preserving security.
+
+4.  **Netdata (Real-Time Monitoring)**
+    *   **Architecture & Integration**: Runs a lightweight, highly efficient real-time telemetry agent in a dedicated container with host-system read access.
+    *   **Functionality**: Exposed securely via the central NGINX proxy path `/netdata/`. It serves a beautiful, interactive dashboard graphing container CPU/RAM allocations, network bandwidth, disk I/O metrics, and real-time database transactions.
+
+5.  **Static Showcase Website**
+    *   **Architecture & Integration**: A clean showcase page built using pure HTML, CSS, and vanilla JS, containerized separately.
+    *   **Functionality**: Proxied under the NGINX subpath `/static/`. It provides a secondary site representing an elegant personal portfolio, completely independent of the WordPress PHP application layer.
 
 ---
 
@@ -102,7 +119,7 @@ their service names (internal DNS) while remaining isolated from the host's othe
 ## Instructions
 
 ### Prerequisites
-- A Linux-based Virtual Machine in my case I used Alpine).
+- A Linux-based Virtual Machine (in my case I used Alpine).
 - Docker and Docker Compose installed.
 - Configure your `/etc/hosts` to point `dasalaza.42.fr` to `127.0.0.1`.
 
