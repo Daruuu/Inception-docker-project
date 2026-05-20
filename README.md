@@ -2,24 +2,44 @@
 # Inception
 
 ## Description
-This project aims to broaden my knowledge of system administration by using **Docker**. The main objective is to set up a complete and secure web infrastructure composed of three services: **Nginx** (as a reverse proxy with TLS), **WordPress** (with PHP-FPM), and **MariaDB**, all orchestrated through **Docker Compose**.
+This project aims to improve my knowledge of **system administration** using Docker.
+The main goal of this project is to build a secure web infrastructure composed of three services: **Nginx** 
+(as a reverse proxy with TLS), **WordPress** (with PHP-FPM), and **MariaDB** (database), all orchestrated through **Docker Compose**.
 
 ### Why Docker?
-Docker was chosen because it allows us to create **lightweight, portable, and isolated**
-environments using container technology. Unlike traditional virtual machine, Docker container share the host kernel, which provides:
+Docker was chosen because it allows us to create **lightweight**, **portable**, and **isolated** environments using 
+container technology. Unlike traditional virtual machines, Docker container share the host kernel, which provides:
 
-- **Much better performance** (near-native speed)
-- **Lower resource consumption** (CPU, RAM, and disk)
+- **Much better performance** (near-native speed).
+- **Lower resource consumption** (CPU, RAM, and disk).
 - **Faster startup and deployment**
-- **Great portability** between different Linux distributions, development, and production environments
+- **Great portability** between different Linux distributions, development, and production environments.
 
-Docker excels at process isolation at the kernel level through **namespaces** and **cgroups**, providing an excellent balance between
-**security, performance, and efficiency**. Unlike virtual machines, containers do not emulate a full operating system, which results in
-significantly lower resource consumption and near-native performance.
-<br><br>This project allowed me to deeply **understand** key containerization **concepts**, such as image building, multi-container orchestration
-with Docker Compose, persistent storage management with volumes, and networking between services.
-It also highlighted the importance of __designing__ a *solid and scalable infrastructure* for any project, along with modern
-system administration best practices including security hardening, environment separation, and infrastructure as code.
+#### How Docker achieves isolation and resource control
+Docker uses two fundamental Linux kernel technologies:
+
+- **Namespaces**: These create isolated workspaces for each container. They make a container believe it is the 
+**only application** running on the operating system. Namespaces isolate:
+    - Processes (PID namespace)
+    - Network (ports, IP addresses, routing)
+    - File system (mount points)
+    - Users and groups
+    - Hostname, among others.
+
+- **Cgroups (Control Groups)**: These are responsible for **limiting and monitoring** the resources each container 
+can use (CPU, memory, disk I/O, network bandwidth, etc.). This prevents one container from consuming all the 
+server’s resources and affecting the stability of other services.
+
+Together, **namespaces + cgroups** give Docker an excellent balance between **security**, **performance**, and **efficiency**. 
+This is what makes containers much lighter and faster than traditional virtual machines.
+
+This project helped me deeply understand key containerization concepts, such as building Docker images, orchestrating 
+multiple containers with **Docker Compose**, managing persistent data with volumes, and configuring networking between 
+services. It also highlighted the importance of designing a solid and scalable infrastructure for any project, 
+while teaching modern system administration best practices including security hardening, environment separation, 
+and Infrastructure as Code.
+
+---
 
 ### Sources & Project Structure
 All deployment configurations and build assets are placed in the `srcs` folder, keeping the root of the repository clean:
@@ -43,13 +63,12 @@ All deployment configurations and build assets are placed in the `srcs` folder, 
 ```
 
 ### Key Design Choices
-1. **Security-First Base Images**: Built exclusively on top of the penultimate stable version of Alpine Linux, reducing the attack surface.
+1. **Security-First Base Images**: Built exclusively on top of the penultimate stable version of Alpine Linux.
 2. **Process Management (PID 1)**: Avoided infinite sleep/loop hacks. Services run in the foreground, letting Docker manage life-cycles and signal propagation correctly.
 3. **Zero Hardcoded Passwords**: Implemented Docker Secrets (`/run/secrets/`) for database, WordPress, and FTP credentials.
 4. **Dedicated Networks**: Custom internal bridge network isolates inter-container communications from the host network namespace.
 5. **Persistence**: Using Docker named volumes stored at `/home/${USER}/data`.
 6. **Security**: Environment variables and Docker secrets are used to handle credentials, ensuring no passwords are hardcoded in the images.
-
 
 ### Key Features
 
@@ -58,29 +77,32 @@ All deployment configurations and build assets are placed in the `srcs` folder, 
 - **WordPress + PHP-FPM**: Pre-configured WordPress instance using PHP-FPM (FastCGI Process Manager) for performance.
 - **MariaDB**: Dedicated database service for WordPress.
 
-#### 🌟 Bonus Microservices Architecture
+### Bonus Microservices Architecture
 
-To elevate the infrastructure, 5 advanced, production-grade microservices were integrated into the custom bridge network, demonstrating a highly modular and secure multi-container architecture:
+To make the infrastructure more complete and realistic, I added **5 additional production-grade services** connected 
+through a custom internal Docker network:
 
-1.  **Redis Cache (Object Cache)**
-    *   **Architecture & Integration**: An in-memory data store running in a dedicated container (`port 6379`) connected directly to WordPress via the internal bridge network.
-    *   **Functionality**: Eliminates database bottlenecks by caching repetitive database queries. WordPress leverages the `redis-cache` PHP plugin, translating to instantaneous page load speeds and drastically reduced database workloads.
+1. **Redis Cache**
+    - **Purpose**: Speeds up WordPress by caching database queries in memory.
+    - **Result**: Much faster page loading and reduced load on MariaDB.
 
-2.  **FTP Server (vsftpd)**
-    *   **Architecture & Integration**: Running a security-hardened `vsftpd` daemon in its own container, sharing the persistent `wordpress_data` volume.
-    *   **Functionality**: Acts as a secure file-management gateway. Administrators can connect using an FTP client (`port 21` and custom passive ports) to securely transfer, update, or backup files directly within the WordPress root directory on the host.
+2. **FTP Server (vsftpd)**
+    - **Purpose**: Allows secure file transfer to the WordPress folder.
+    - **Result**: Easy upload, backup, and management of website files.
 
-3.  **Adminer (Database Manager)**
-    *   **Architecture & Integration**: A single-file PHP database management tool running in a dedicated container, completely isolated and hidden from direct public ports.
-    *   **Functionality**: Proxied securely under the NGINX subpath `/adminer`. It provides a sleek, lightweight web GUI allowing administrators to inspect MariaDB schemas, tables, and records on the fly without opening MariaDB's external `port 3306` to the WAN, thus preserving security.
+3. **Adminer**
+    - **Purpose**: Web interface to manage the MariaDB database.
+    - **Result**: Secure access (protected behind Nginx) without exposing the database port publicly.
 
-4.  **Netdata (Real-Time Monitoring)**
-    *   **Architecture & Integration**: Runs a lightweight, highly efficient real-time telemetry agent in a dedicated container with host-system read access.
-    *   **Functionality**: Exposed securely via the central NGINX proxy path `/netdata/`. It serves a beautiful, interactive dashboard graphing container CPU/RAM allocations, network bandwidth, disk I/O metrics, and real-time database transactions.
+4. **Netdata**
+    - **Purpose**: Real-time monitoring dashboard.
+    - **Result**: Shows CPU, memory, disk, and network usage of all containers.
 
-5.  **Static Showcase Website**
-    *   **Architecture & Integration**: A clean showcase page built using pure HTML, CSS, and vanilla JS, containerized separately.
-    *   **Functionality**: Proxied under the NGINX subpath `/static/`. It provides a secondary site representing an elegant personal portfolio, completely independent of the WordPress PHP application layer.
+5. **Static Website**
+    - **Purpose**: Containerized version of the previous 42 `Webserver project`.
+    - **Result**: Served as a separate site under the `/static/` path.
+
+All bonus services are fully integrated into the custom Docker bridge network, isolated, and proxied securely through Nginx.
 
 ---
 
