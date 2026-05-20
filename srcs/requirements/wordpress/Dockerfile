@@ -23,12 +23,12 @@ RUN apk update && apk add --no-cache \
 
 RUN ln -sf /usr/bin/php83 /usr/bin/php
 
-# Instalamos wp-cli (herramienta fundamental para configurar WP por comandos)
+# Install wp-cli (this fundamental tool configure WP in cmd)
 RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
     && chmod +x wp-cli.phar \
     && mv wp-cli.phar /usr/local/bin/wp
 
-# Configuramos PHP-FPM para que escuche en el puerto 9000
+# Update configuration of PHP-FPM , listen in port 9000
 RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/g' /etc/php83/php-fpm.d/www.conf
 
 WORKDIR /var/www/html/wordpress
