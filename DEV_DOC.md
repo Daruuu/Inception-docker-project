@@ -15,9 +15,20 @@ Add the following line to your `/etc/hosts` file to resolve the domain locally:
 ```
 
 ## 2. Build and Launch Process
-The project uses a `Makefile` to orchestrate the creation of the environment.
 
-### Step-by-Step Workflow:
+### 2.1 Configuration Files
+The project isolates environment variables and daemon configurations to allow modularity:
+- **`srcs/.env`**: Contains non-confidential environmental variables such as domain names, database names, network ports, and service user names. If missing, the pre-build stage generates a fully parameterized version automatically.
+- **Service Configurations**: Core daemon files (such as NGINX's default `nginx.conf`, MariaDB's `mariadb-server.cnf`, and vsftpd's `vsftpd.conf`) are organized within each service's requirement directory and copied into the respective container image layers during the build process.
+
+### 2.2 Secrets & Passwords Management
+To enforce standard security hygiene and comply with the **zero hardcoded password** rule:
+- Passwords are dynamically generated using `openssl rand` during the `make setup` phase and stored locally in the `srcs/secrets/` directory.
+- The `srcs/secrets/` directory is ignored by Git via `.gitignore` to prevent leakage.
+- Docker Compose defines these host files as **Docker Secrets**, securely mounting them into the container runtime filesystem as read-only files under `/run/secrets/<secret_name>`.
+- Internal entrypoint shell scripts read these secure mount points on startup to perform database bootstrap operations and WordPress configurations.
+
+### 2.3 Step-by-Step Launch Workflow
 1. **Pre-build (`make setup`)**:
    - Creates the required persistent data directories on the host (`/home/${USER}/data`). *Note: The Makefile dynamically resolves this using `/home/$(USER)/data` to ensure seamless portability during evaluation.*
    - Generates the `.env` file if it doesn't exist.
@@ -26,9 +37,9 @@ The project uses a `Makefile` to orchestrate the creation of the environment.
    - Executes `docker compose build`.
    - Each service has its own `Dockerfile` in `srcs/requirements/`.
 3. **Up (`make up`)**:
-   - Starts the containers in detached mode.
+   - Starts the containers in detached mode, relying on healthchecks and service conditions to coordinate the startup sequence (e.g., WordPress waiting until MariaDB is fully healthy).
 
-You can run all steps at once with:
+You can run the entire workflow with a single orchestrator command:
 ```bash
 make all
 ```

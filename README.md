@@ -8,11 +8,11 @@ The main goal of this project is to build a secure web infrastructure composed o
 
 ### Why Docker?
 Docker was chosen because it allows us to create **lightweight**, **portable**, and **isolated** environments using 
-container technology. Unlike traditional virtual machines, Docker container share the host kernel, which provides:
+container technology. Unlike traditional virtual machines, Docker containers share the host kernel, which provides:
 
 - **Much better performance** (near-native speed).
 - **Lower resource consumption** (CPU, RAM, and disk).
-- **Faster startup and deployment**
+- **Faster startup and deployment.**
 - **Great portability** between different Linux distributions, development, and production environments.
 
 #### How Docker achieves isolation and resource control
@@ -111,30 +111,21 @@ All bonus services are fully integrated into the custom Docker bridge network, i
 ### Main Design Choices & Comparisons
 
 #### 1. Virtual Machines vs Docker
-- **Virtual Machines**: Emulate a complete OS (including kernel). Heavy, slow to start, high resource usage.
-- **Docker**: OS-level virtualization. Containers are lightweight, start in seconds, and share the host kernel while maintaining strong isolation.
+- **Virtual Machines**: Emulate a complete hardware layer and run a full guest Operating System (including its own kernel). This makes them heavy, resource-intensive, and slow to start.
+- **Docker Containers**: Share the host system's kernel while isolating application processes in user space using Linux **namespaces** and **cgroups**. This provides near-native performance, extremely fast startup times, and minimal resource overhead while maintaining high security and isolation.
 
 #### 2. Secrets vs Environment Variables
-- We used a `.env` file combined with Docker Secrets best practices for sensitive data (database passwords, etc.).
-- **Environment Variables** are convenient for development but can be exposed more easily.
-- **Docker Secrets** (or mounted secret files) are more secure for production as they are stored in memory (not on disk) and have tighter access control.
+- **Environment Variables** (`.env`): Excellent for non-sensitive configurations (e.g., domain names, database names, ports) but highly insecure for passwords, as they can be easily leaked via `docker inspect`, process listings, or logs.
+- **Docker Secrets**: Used for all sensitive data (database passwords, administrative credentials). Secrets are securely loaded at runtime and mounted as temporary virtual files (under `/run/secrets/`), ensuring that sensitive credentials are never baked into Docker images, exposed to child processes, or leaked into the environment.
 
 #### 3. Docker Network vs Host Network
-- We used a custom **Docker bridge network** (`docker-compose.yml` with `networks`).
-- This provides better **isolation** between containers and the host.
-- `network: host` is forbidden in this project (as per subject rules) because it breaks isolation and port management.
-
-The `host` network mode makes the container use the host's networking namespace directly, which reduces isolation. 
-In this project, a dedicated `bridge` network is used to provide a private network where containers can communicate using 
-their service names (internal DNS) while remaining isolated from the host's other processes.
+- **Host Network**: Shares the host's networking namespace directly, removing container-level network isolation. This is forbidden in this project because it poses security risks and causes port conflicts.
+- **Docker Bridge Network**: An isolated, private internal network namespace created specifically for this stack (`inception_network`). Services can only communicate with each other using internal DNS resolution (service names), fully isolated from unauthorized host processes or external scans. NGINX acts as the *only* gateway to this network via port 443.
 
 #### 4. Docker Volumes vs Bind Mounts
-- We used **named volumes** for persistent data (MariaDB data and WordPress files).
-- **Advantages over Bind Mounts**:
-    - Better portability (no dependency on host path structure)
-    - Better management with Docker commands (`docker volume`)
-    - Improved security and encapsulation
-- Volumes are stored in `/home/login/data` on the host as required by the subject.
+- **Bind Mounts**: Directly mount a specific folder from the host filesystem into a container, making the configuration highly dependent on the host's directory structure and permissions.
+- **Docker Named Volumes**: Managed natively by the Docker engine, abstracting the underlying storage while providing optimal performance and backup capabilities.
+- **Our Hybrid Design Choice**: To strictly satisfy both subject constraints—using **Docker Named Volumes** while ensuring they store data under a specific host directory (`/home/<login>/data`)—we implemented named volumes backed by a local bind mount driver (`type: none`, `o: bind`). This delivers the portable encapsulation of named volumes alongside complete control over the host storage path.
 
 ---
 
