@@ -156,22 +156,26 @@ In your `docker-compose.yml`, FTP runs on the host port **`21`** (standard port)
 
 1. **Set Up Local Credentials Variables** (for easy copy-paste):
    ```bash
-   export FTP_USER=$(grep WP_USER srcs/.env | cut -d= -f2)
+   export FTP_USER=$(grep WP_USER= srcs/.env)
    export FTP_PASS=$(cat srcs/secrets/ftp_password.txt)
+   curl -v ftp://$FTP_USER:$FTP_PASS@localhost:2121/
    ```
 2. **List Files via FTP**:
    ```bash
-   curl -v ftp://$FTP_USER:$FTP_PASS@localhost:21/
+   curl -v ftp://$FTP_USER:$FTP_PASS@localhost:2121/
    ```
    
 3. **Upload a Test File**:
    ```bash
-   echo "Inception FTP Test 2026" > test_ftp.txt
-   curl -v -T test_ftp.txt ftp://$FTP_USER:$FTP_PASS@localhost:21/
+   echo "Inception FTP Test 2026 - $(date)" > test_ftp.txt
+
+   curl -v -T test_ftp.txt ftp://$FTP_USER:$FTP_PASS@localhost:2121/
    ```
 4. **Verify the File Arrived in the WordPress Container**:
    ```bash
-   docker exec -it wordpress ls -la /var/www/html/wordpress/test_ftp.txt
+   docker exec -it wordpress sh
+   
+   ls -la /var/www/html/wordpress/test_ftp.txt
    ```
    *Expected: The file should exist and contain "Inception FTP Test 2026".*
 
